@@ -9,6 +9,7 @@ RED = (220, 60, 60)
 
 class GameEngine:
     def __init__(self, width, height):
+        self.exit_requested = False
         self.width = width
         self.height = height
 
@@ -32,7 +33,10 @@ class GameEngine:
 
     def handle_event(self, event):
         if self.game_over:
+            if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN):
+                self.exit_requested = True
             return
+
         if event.type == pygame.MOUSEBUTTONDOWN:
             self._handle_click(event.pos)
 
@@ -71,6 +75,44 @@ class GameEngine:
         return round(100 * self.hits / total, 1)
 
     def render(self, screen):
+        if self.game_over:
+            game_over_text = self.font.render("GAME OVER", True, WHITE)
+            score_text = self.font.render(
+                f"Final Score: {self.score}", True, WHITE
+            )
+            acc_text = self.font.render(
+                f"Accuracy: {self.accuracy()}%", True, WHITE
+            )
+            prompt_text = self.font.render(
+                "Press any key or click to exit", True, WHITE
+            )
+
+            screen.blit(
+                game_over_text,
+                game_over_text.get_rect(
+                    center=(self.width // 2, self.height // 2 - 70)
+                )
+            )
+            screen.blit(
+                score_text,
+                score_text.get_rect(
+                    center=(self.width // 2, self.height // 2 - 20)
+                )
+            )
+            screen.blit(
+                acc_text,
+                acc_text.get_rect(
+                    center=(self.width // 2, self.height // 2 + 20)
+                )
+            )
+            screen.blit(
+                prompt_text,
+                prompt_text.get_rect(
+                    center=(self.width // 2, self.height // 2 + 80)
+                )
+            )
+            return
+
         r = int(self.target.visual_radius())
         pygame.draw.circle(screen, RED, (self.target.x, self.target.y), r)
         pygame.draw.circle(screen, WHITE, (self.target.x, self.target.y), r, 2)
@@ -82,10 +124,7 @@ class GameEngine:
         timer_text = self.font.render(f"Time: {seconds_left}s", True, WHITE)
         screen.blit(timer_text, (self.width - 140, 10))
 
-        acc_text = self.font.render(f"Accuracy: {self.accuracy()}%", True, WHITE)
+        acc_text = self.font.render(
+            f"Accuracy: {self.accuracy()}%", True, WHITE
+        )
         screen.blit(acc_text, (self.width // 2 - 90, 10))
-
-        if self.game_over and not getattr(self, "_game_over_logged", False):
-            # NOTE: no proper game-over screen yet - see Task 2 in the README.
-            print(f"Time's up! Final score: {self.score}  Accuracy: {self.accuracy()}%")
-            self._game_over_logged = True
