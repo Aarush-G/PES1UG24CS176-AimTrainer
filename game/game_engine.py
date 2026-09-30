@@ -1,3 +1,4 @@
+import os
 import pygame
 import random
 from .target import Target
@@ -26,6 +27,27 @@ class GameEngine:
 
         self.font = pygame.font.SysFont("Arial", 26)
         self.game_over = False
+
+        assets_dir = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)),
+            "assets"
+        )
+
+        self.hit_sound = pygame.mixer.Sound(
+            os.path.join(assets_dir, "hit.wav")
+        )
+
+        self.miss_sound = pygame.mixer.Sound(
+            os.path.join(assets_dir, "miss.wav")
+        )
+
+        self.timeout_sound = pygame.mixer.Sound(
+            os.path.join(assets_dir, "timeout.wav")
+        )
+
+        self.round_end_sound = pygame.mixer.Sound(
+            os.path.join(assets_dir, "round_end.wav")
+        )
 
         self._start_round(self.difficulty)
 
@@ -117,11 +139,14 @@ class GameEngine:
         if self.target.contains_point(x, y):
             self.hits += 1
             self.score += 1
+            self.hit_sound.play()
+
             self.target = self._spawn_target(
                 *self._difficulty_settings()
             )
         else:
             self.misses += 1
+            self.miss_sound.play()
 
     def handle_input(self):
         # Reserved for continuously-held-key input.
@@ -135,12 +160,15 @@ class GameEngine:
 
         if self.time_left_frames <= 0:
             self.game_over = True
+            self.round_end_sound.play()
             return
 
         self.target.update()
 
         if self.target.expired():
             self.misses += 1
+            self.timeout_sound.play()
+
             self.target = self._spawn_target(
                 *self._difficulty_settings()
             )
